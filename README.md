@@ -8,11 +8,11 @@ This repository is the implementation for the paper [FuseGPT: Learnable Layers F
 conda create -n fusegpt python=3.11
 conda activate fusegpt
 conda install pytorch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 pytorch-cuda=12.4 -c pytorch -c nvidia
-pip install datasets
-pip install transformers
-pip install accelerate
-pip install sentencepiece
-pip install protobuf
+pip install datasets==3.1.0
+pip install transformers==4.47.0
+pip install accelerate==1.2.0
+pip install sentencepiece==0.2.0
+pip install protobuf==5.29.1
 ```
 Note: please modify the version of some packages for your own environment.
 
@@ -20,7 +20,7 @@ Note: please modify the version of some packages for your own environment.
 
 ### Llama
 
-Download the models from [Huggingface](https://huggingface.co/), then you can run the code run_fusion.py. Set model path as 'MODEL_PATH' and set the save path as 'SAVE_DIR' if you want to save the fused model.
+Download the models from [Huggingface](https://huggingface.co/) (models of huggingface format), then you can run the code run_fusion.py. Set model path as 'MODEL_PATH' and set the save path as 'SAVE_DIR' if you want to save the fused model.
 
 You can run the pre-defined testing script 'run.sh' by:
 ```bash
