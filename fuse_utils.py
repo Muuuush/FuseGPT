@@ -181,10 +181,11 @@ def compute_inps_run(layers, inps_initial, attention_mask, position_ids, layer_s
             return inps_run
 
         #We store the inps in cpu to save memory in case the model is too large. Runtime will increase.
-        if '7b' in args.model.lower() and args.prune_rate != 0.3:
-            device = 'cuda'
-        else:
-            device = 'cpu'
+        # if '7b' in args.model.lower() and args.prune_rate != 0.3:
+        #     device = 'cuda'
+        # else:
+        #     device = 'cpu'
+        device = 'cuda'
         
         outs_new = torch.zeros((inps_run.shape[0], inps_run.shape[1], inps_run.shape[2], inps_run.shape[3]), dtype=inps_run.dtype, device=device)
         layer = layers[i]
