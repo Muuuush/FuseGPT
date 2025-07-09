@@ -178,7 +178,6 @@ def compute_inps_run(layers, inps_initial, attention_mask, position_ids, layer_s
 
     for i in range(len(layers)):
         if i == layer_start_idx:
-            del outs_new
             return inps_run
 
         #We store the inps in cpu to save memory in case the model is too large. Runtime will increase.
@@ -196,6 +195,8 @@ def compute_inps_run(layers, inps_initial, attention_mask, position_ids, layer_s
         torch.cuda.empty_cache()
 
         inps_run = outs_new
+        del outs_new
+        torch.cuda.empty_cache()
 
 
 @torch.no_grad()
