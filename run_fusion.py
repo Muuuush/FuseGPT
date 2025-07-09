@@ -88,7 +88,7 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
 
     if not args.iterative:
 
-        importance_list = full_importance_eval2(layers, inps_eval, attention_mask, position_ids)
+        importance_list = full_importance_eval(layers, inps_eval, attention_mask, position_ids)
         removed_list = importance_list[:len(layers)//4]
         print(removed_list)
 
@@ -328,6 +328,8 @@ def fusion_eval(model, testenc, dev, eval_set, args):
         file_name = "results-llama2.txt"
     if 'llava' in args.model.lower():
         file_name = "results-llava.txt"    
+    if 'llava' in args.model.lower():
+        file_name = "results-tiny-llama.txt"    
     results = f"ppl {eval_set}: " + str(ppl.item()) + ";num_samples: " + str(args.nsamples) + ";model: " + str(args.model) + ';coef_lr: ' + str(args.coef_lr) + ';cali_data: ' + str(args.dataset)
     if args.iterative:
         results = results + ";iterative " + str(args.iterative)
