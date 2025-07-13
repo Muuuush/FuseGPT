@@ -331,7 +331,7 @@ def fusion_eval(model, testenc, dev, eval_set, args):
         file_name = "results-llama2.txt"
     if 'llava' in args.model.lower():
         file_name = "results-llava.txt"    
-    if 'llava' in args.model.lower():
+    if 'tiny' in args.model.lower():
         file_name = "results-tiny-llama.txt"    
     results = f"ppl {eval_set}: " + str(ppl.item()) + ";num_samples: " + str(args.nsamples) + ";model: " + str(args.model) + ';coef_lr: ' + str(args.coef_lr) + ';cali_data: ' + str(args.dataset)
     if args.iterative:
@@ -435,7 +435,19 @@ if __name__ == '__main__':
 
     tick = time.time()
     fused_model = fusion_sequential(model, dataloader, DEV, args)
-    print("Runtime of Fusion: ", time.time() - tick)
+    run_time = time.time() - tick
+    print("Runtime of Fusion: ", run_time)
+    file_name = "results.txt"
+    if 'llama-3' in args.model.lower():
+        file_name = "results-llama3.txt"
+    if 'llama-2' in args.model.lower():
+        file_name = "results-llama2.txt"
+    if 'llava' in args.model.lower():
+        file_name = "results-llava.txt"    
+    if 'tiny' in args.model.lower():
+        file_name = "results-tiny-llama.txt"
+    with open(file_name, "a") as file:
+        file.write(f"runtime: {run_time}\n")
 
     if args.save:
         from transformers import AutoTokenizer 
