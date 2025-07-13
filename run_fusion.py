@@ -97,11 +97,13 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
     fuse_times = int(math.ceil(len(layers)*args.prune_rate))
 
     fused_index = []
+    unchanged_head_idx = -1
+    outs_cache = []
     for idx in range(fuse_times):
         layer_max = len(layers)
         if args.iterative:
 
-            importance_list = full_importance_eval(layers, inps_eval, attention_mask, position_ids)
+            importance_list, outs_cache = full_importance_eval(layers, inps_eval, attention_mask, position_ids, unchanged_head_idx, outs_cache)
             fuse_idx = importance_list[0]
 
         else:
@@ -143,6 +145,7 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
                 )
         else:
             layers_unfuse_left = nn.ModuleList([])
+        unchanged_head_idx = group[0] - 1
         
         if group[-1] < layer_max-1:
             layers_unfuse_right = nn.ModuleList(

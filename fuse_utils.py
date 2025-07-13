@@ -201,11 +201,18 @@ def compute_inps_run(layers, inps_initial, attention_mask, position_ids, layer_s
 
 
 @torch.no_grad()
-def full_importance_eval(layers, inps_eval, attention_mask, position_ids):
+def full_importance_eval(
+    layers, inps_eval, attention_mask, position_ids,
+    unchanged_head_idx = -1, outs_cache = []
+    ):
     eval_batch_n = 4
-    inps_run_f = copy.deepcopy(inps_eval).to(device = 'cuda')
+    if unchanged_head_idx == -1:
+        inps_run_f = copy.deepcopy(inps_eval).to(device = 'cuda')
+    else:
+        inps_run_f = copy.deepcopy(outs_cache[unchanged_head_idx]).to(device = "cuda")
+    outs_cache_new = []
 
-    for i in range(len(layers)):
+    for i in range(unchanged_head_idx + 1, len(layers)):
 
         outs_new = torch.zeros((eval_batch_n, inps_run_f.shape[1], inps_run_f.shape[2], inps_run_f.shape[3]), dtype=inps_run_f.dtype, device='cuda')
         layer = layers[i]
@@ -214,8 +221,11 @@ def full_importance_eval(layers, inps_eval, attention_mask, position_ids):
 
         torch.cuda.empty_cache()
 
+        outs_cache_new.append(outs_new)
         inps_run_f = outs_new
     
+    outs_cache_new = copy.deepcopy(outs_cache[0:unchanged_head_idx + 1]) + outs_cache_new
+    del outs_cache
     outs_full = outs_new
     del inps_run_f
 
@@ -223,11 +233,14 @@ def full_importance_eval(layers, inps_eval, attention_mask, position_ids):
     sim= []
     for i in tqdm(range(len(layers)), desc = 'Importance Calculating...'):
 
-        inps_run_t = copy.deepcopy(inps_run).to(device = 'cuda')
+        if i == 0:
+            inps_run_t = copy.deepcopy(inps_run).to(device = 'cuda')
+        else:
+            inps_run_t = copy.deepcopy(outs_cache_new[i - 1]).to(device = "cuda")
 
         layers_new = nn.ModuleList([layer for j, layer in enumerate(layers) if j != i])
                 
-        for k in range(len(layers_new)):
+        for k in range(i, len(layers_new)):
             outs_new = torch.zeros((eval_batch_n, inps_run_t.shape[1], inps_run_t.shape[2], inps_run_t.shape[3]), dtype=inps_run_t.dtype, device='cuda')
 
             layer = layers_new[k]
@@ -250,7 +263,7 @@ def full_importance_eval(layers, inps_eval, attention_mask, position_ids):
 
     out_idx = torch.argsort(sim, descending = True)
 
-    return out_idx
+    return out_idx, outs_cache_new
     
 class Fuser():
     
