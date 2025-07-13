@@ -239,19 +239,22 @@ def full_importance_eval(
             inps_run_t = copy.deepcopy(outs_cache_new[i - 1]).to(device = "cuda")
 
         layers_new = nn.ModuleList([layer for j, layer in enumerate(layers) if j != i])
-                
-        for k in range(i, len(layers_new)):
-            outs_new = torch.zeros((eval_batch_n, inps_run_t.shape[1], inps_run_t.shape[2], inps_run_t.shape[3]), dtype=inps_run_t.dtype, device='cuda')
-
-            layer = layers_new[k]
-            for j in range(eval_batch_n):
-                outs_new[j] = layer(inps_run_t[j], attention_mask=attention_mask, position_ids=position_ids)[0]
-
-            torch.cuda.empty_cache()
-
-            inps_run_t = outs_new
         
-        del inps_run_t
+        if i < len(layers_new):
+            for k in range(i, len(layers_new)):
+                outs_new = torch.zeros((eval_batch_n, inps_run_t.shape[1], inps_run_t.shape[2], inps_run_t.shape[3]), dtype=inps_run_t.dtype, device='cuda')
+
+                layer = layers_new[k]
+                for j in range(eval_batch_n):
+                    outs_new[j] = layer(inps_run_t[j], attention_mask=attention_mask, position_ids=position_ids)[0]
+
+                torch.cuda.empty_cache()
+
+                inps_run_t = outs_new
+            
+            del inps_run_t
+        else:
+            outs_new = inps_run_t
 
         outs_part = outs_new
         sim_i = F.cosine_similarity(outs_full, outs_part, dim = 3).mean()
