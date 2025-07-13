@@ -32,6 +32,7 @@ class FuseLinear(torch.nn.Module):
         self.out_features = out_features
         self.coef_matrix = args.coef_matrix
         self.coef_lora = args.coef_lora
+        self.self_coef = args.self_coef
         self.lora_rank = args.lora_rank
         self.args = args
 
@@ -39,6 +40,10 @@ class FuseLinear(torch.nn.Module):
         self.lora_A = nn.Parameter(self.weight.new_zeros((128, in_features)))
         self.lora_B = nn.Parameter(self.weight.new_zeros((out_features,128)))
         nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        if self.self_coef:
+            self.self_coef_A = nn.Parameter(self.weight.new_zeros((128, in_features)))
+            self.self_coef_B = nn.Parameter(self.weight.new_zeros((out_features,128)))
+            nn.init.kaiming_uniform_(self.self_coef_A, a=math.sqrt(5))
         self.weight.requires_grad = False
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
@@ -68,6 +73,8 @@ class FuseLinear(torch.nn.Module):
             weight_2fuse += linear_2fuse.weight.data
             if True:
                 weight_2fuse += torch.matmul(linear_2fuse.lora_B.data, linear_2fuse.lora_A.data)
+            if self.self_coef:
+                weight_2fuse += linear_2fuse.weight.data * torch.matmul(linear_2fuse.self_coef_B.data, linear_2fuse.self_coef_A.data)
 
             for coef, add_w in zip(linear_2fuse.coef_list, linear_2fuse.add_weight_list):
                 if not self.coef_lora:
@@ -126,6 +133,8 @@ class FuseLinear(torch.nn.Module):
         fused_weight += self.weight
         if True:
             fused_weight += torch.matmul(self.lora_B, self.lora_A)
+        if self.self_coef:
+            fused_weight += self.weight * torch.matmul(self.self_coef_B.data, self.self_coef_A.data)
         for coef, add_w in zip(self.coef_list, self.add_weight_list):
             if not self.coef_lora:
                 fused_weight += coef.to(device=input.device) * add_w.to(device=input.device)

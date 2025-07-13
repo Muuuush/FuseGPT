@@ -401,6 +401,10 @@ if __name__ == '__main__':
         help='Whether to use lora decomp for matrix coef during fusion.'
     )
     parser.add_argument(
+        '--self-coef', action='store_true',
+        help='Whether to add self coefficient during fusion.'
+    )
+    parser.add_argument(
         '--save', action='store_true',
         help='Whether to save the model (as huggingface format).'
     )
