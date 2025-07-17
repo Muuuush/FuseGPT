@@ -61,7 +61,7 @@ def mmlu_single_question(model, tokenizer, question, shots):
     options = ["A", "B", "C", "D"]
     predicted_answer = options[predicted_idx]
     answer = options[question['answer']]
-    print(f"prediction: {predicted_answer}, answer: {answer}")
+    # print(f"prediction: {predicted_answer}, answer: {answer}")
     return predicted_answer == answer
 
 def mmlu_evaluate(args):
