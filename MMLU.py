@@ -62,7 +62,7 @@ def mmlu_evaluate(args):
     else:
         model = get_llama(args.model)
 
-    shots, questions = load_mmlu(args.dataset, args)
+    shots, questions = load_mmlu(args)
     correct = 0
     print("MMLU start")
     for question in tqdm(questions, desc= 'Processing...'):
