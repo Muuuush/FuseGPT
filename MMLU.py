@@ -42,12 +42,7 @@ def mmlu_single_question(model, tokenizer, question, shots):
 
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
-    outputs = model.generate(
-        **inputs,
-        max_new_tokens=1,
-        do_sample=False,
-        return_dict_in_generate=True
-    )
+    outputs = model(**inputs)
     logits = outputs.logits[:, -1, :]
     option_ids = {
         "A": tokenizer("A").input_ids[-1],
