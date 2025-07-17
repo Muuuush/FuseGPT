@@ -1,33 +1,40 @@
 import os
 import csv
+import random
 import time
 import json
 from tqdm import tqdm
 from datetime import datetime
 from run_fusion import get_llama, get_llava
 
-def load_dataset(file_path, args):
+def load_mmlu(args):
+    from datasets import load_dataset
+    test_data = load_dataset("cais/mmlu", "all", split="test")
+
+    random.seed(args.seed)
+    indices = random.sample(range(len(test_data)), args.shot_number + args.nsamples)
+    
+    shots = []
+    for i in indices[:args.shot_number]:
+        choices = test_data[i]["choices"]
+        shot = {
+            "question": test_data[i]["question"],
+            "choices": f"A. {choices[0]}\nB. {choices[1]}\nC. {choices[2]}\nD. {choices[3]}",
+            "answer": test_data[i]["answer"]
+        }
+        shots.append(shot)
+    
     questions = []
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            reader = csv.reader(f)
-            for row_num, row in enumerate(reader, 1):
-                if len(row) < 6:
-                    continue
-                answer = row[5].strip().upper()
-                if answer not in {"A", "B", "C", "D"}:
-                    continue
-                question = {
-                    "question": row[0].strip(),
-                    "choices": [row[i].strip() for i in range(1,5)],
-                    "answer": answer
-                }
-                questions.append(question)
-                if len(questions) >= args.max_questions:
-                    break
-    except Exception as e:
-        print(f"Failed to load file: {file_path}")
-    return questions
+    for i in indices[args.shot_number:]:
+        choices = test_data[i]["choices"]
+        question = {
+            "question": test_data[i]["question"],
+            "choices": f"A. {choices[0]}\nB. {choices[1]}\nC. {choices[2]}\nD. {choices[3]}",
+            "answer": test_data[i]["answer"]
+        }
+        questions.append(question)
+    
+    return shots, questions
 
 
 def mmlu_single_question(model, tokenizer, question, shots):
@@ -47,7 +54,6 @@ def mmlu_single_question(model, tokenizer, question, shots):
     return prediction.strip() == question["answer"].strip()
 
 def mmlu_evaluate(args):
-    questions = load_dataset(args.dataset, args)
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(args.model)
 
@@ -56,9 +62,8 @@ def mmlu_evaluate(args):
     else:
         model = get_llama(args.model)
 
+    shots, questions = load_mmlu(args.dataset, args)
     correct = 0
-    shots_num = args.shot_number
-    shots = questions[:shots_num]
     print("MMLU start")
     for question in tqdm(questions, desc= 'Processing...'):
         if mmlu_single_question(model, tokenizer, question, shots):
@@ -76,16 +81,16 @@ if __name__ == "__main__":
         help='Model to load; pass location of hugginface converted checkpoint.'
     )
     parser.add_argument(
-        'dataset', type=str,
-        help='The path of the dataset.'
+        '--seed',
+        type=int, default=0, help='Seed for sampling the calibration data.'
     )
     parser.add_argument(
         '--shot-number',
         type=int, default=5, help='The number of shots.'
     )
     parser.add_argument(
-        '--max-questions',
-        type=int, default=500, help='The max question number.'
+        '--nsamples',
+        type=int, default=500, help='The number of samples.'
     )
     args = parser.parse_args()
 
