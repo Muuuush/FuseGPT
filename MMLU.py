@@ -69,7 +69,7 @@ def mmlu_evaluate(args):
     for question in tqdm(questions, desc= 'Processing...'):
         if mmlu_single_question(model, tokenizer, question, shots):
             correct += 1
-    accuracy = correct / 50
+    accuracy = correct / len(questions)
     return accuracy
 
 if __name__ == "__main__":
