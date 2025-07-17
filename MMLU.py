@@ -51,8 +51,8 @@ def mmlu_single_question(model, tokenizer, question, shots):
         do_sample=False
     )
     prediction = tokenizer.decode(outputs[0][-1], skip_special_tokens=True)
-    # print(f"prediction: {prediction}, answer: {question['answer']}")
-    return prediction.strip() == "ABCD"[question["answer"]].strip()
+    print(f"prediction: {prediction.strip().upper()}, answer: {"ABCD"[question["answer"]].strip()}")
+    return prediction.strip().upper() == "ABCD"[question["answer"]].strip()
 
 def mmlu_evaluate(args):
     from transformers import AutoTokenizer
