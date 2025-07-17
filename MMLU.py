@@ -40,7 +40,7 @@ def load_mmlu(args):
 def mmlu_single_question(model, tokenizer, question, shots):
     prompt = "The following are multiple choice questions (with answers).\n\n"
     for shot in shots:
-        prompt += f"Question: {shot['question']}\nChoices: {shot['choices']}\nAnswer: {shot['answer']}\n\n"
+        prompt += f"Question: {shot['question']}\nChoices: {shot['choices']}\nAnswer: {"ABCD"[shot['answer']]}\n\n"
     prompt += f"Question: {question['question']}\nChoices: {question['choices']}\nAnswer: "
 
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
