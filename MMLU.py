@@ -40,8 +40,8 @@ def load_mmlu(args):
 def mmlu_single_question(model, tokenizer, question, shots):
     prompt = "The following are multiple choice questions (with answers).\n\n"
     for shot in range(shots):
-        prompt += f"Question: {shot['question']}\nChoices: {shot["choices"]}\nAnswer: {shot['answer']}\n\n"
-    prompt += f"Question: {question['question']}\nChoices: {question["choices"]}\nAnswer: {question['answer']}"
+        prompt += f"Question: {shot['question']}\nChoices: {shot['choices']}\nAnswer: {shot['answer']}\n\n"
+    prompt += f"Question: {question['question']}\nChoices: {question['choices']}\nAnswer: {question['answer']}"
 
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         'model', type=str,
-        help='Model to load; pass location of hugginface converted checkpoint.'
+        help='Model to load; pass location of huggingface converted checkpoint.'
     )
     parser.add_argument(
         '--seed',
