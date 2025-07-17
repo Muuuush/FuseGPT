@@ -1,8 +1,5 @@
-import os
-import csv
+import torch
 import random
-import time
-import json
 from tqdm import tqdm
 from datetime import datetime
 from run_fusion import get_llama, get_llava
@@ -50,9 +47,26 @@ def mmlu_single_question(model, tokenizer, question, shots):
         max_new_tokens=1,
         do_sample=False
     )
-    prediction = tokenizer.decode(outputs[0][-1], skip_special_tokens=True)
-    print(f"prediction: {prediction.strip().upper()}, answer: {'ABCD'[question['answer']].strip()}")
-    return prediction.strip().upper() == "ABCD"[question["answer"]].strip()
+    logits = outputs.logits[:, -1, :]
+    option_ids = {
+        "A": tokenizer("A").input_ids[-1],
+        "B": tokenizer("B").input_ids[-1],
+        "C": tokenizer("C").input_ids[-1],
+        "D": tokenizer("D").input_ids[-1]
+    }
+    probs = torch.softmax(
+        torch.tensor([logits[0, option_ids["A"]], 
+                      logits[0, option_ids["B"]],
+                      logits[0, option_ids["C"]],
+                      logits[0, option_ids["D"]]]), 
+        dim=-1
+    )
+    predicted_idx = torch.argmax(probs).item()
+    options = ["A", "B", "C", "D"]
+    predicted_answer = options[predicted_idx]
+    answer = options[question['answer']]
+    print(f"prediction: {predicted_answer}, answer: {answer}")
+    return predicted_answer == answer
 
 def mmlu_evaluate(args):
     from transformers import AutoTokenizer
