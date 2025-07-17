@@ -45,7 +45,8 @@ def mmlu_single_question(model, tokenizer, question, shots):
     outputs = model.generate(
         **inputs,
         max_new_tokens=1,
-        do_sample=False
+        do_sample=False,
+        return_dict_in_generate=True
     )
     logits = outputs.logits[:, -1, :]
     option_ids = {
