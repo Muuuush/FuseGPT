@@ -62,6 +62,7 @@ def mmlu_single_question(model, tokenizer, question, shots):
     predicted_answer = options[predicted_idx]
     answer = options[question['answer']]
     # print(f"prediction: {predicted_answer}, answer: {answer}")
+    torch.cuda.empty_cache()
     return predicted_answer == answer
 
 def mmlu_evaluate(args):
@@ -79,6 +80,8 @@ def mmlu_evaluate(args):
     for question in tqdm(questions, desc= 'Processing...'):
         if mmlu_single_question(model, tokenizer, question, shots):
             correct += 1
+        torch.cuda.empty_cache()
+        
     accuracy = correct / len(questions)
     return accuracy
 
