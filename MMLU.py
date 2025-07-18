@@ -73,6 +73,7 @@ def mmlu_evaluate(args):
         model = get_llava(args.model)
     else:
         model = get_llama(args.model)
+    model = model.cuda()
 
     shots, questions = load_mmlu(args)
     correct = 0
