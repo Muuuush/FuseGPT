@@ -311,7 +311,7 @@ class Fuser():
         return layers_new
 
     @torch.no_grad()
-    def fuse_by_coef(self, layers_origin, fuse_idx, target_idx):
+    def fuse_by_coef(self, layers_origin, fuse_idx, target_idx, lora_rank):
         layer_2fuse = layers_origin[fuse_idx]
         # target_idx = target_idx
         
@@ -325,7 +325,7 @@ class Fuser():
             bias = False if module_target.bias is None else True
             if not isinstance(module_target, FuseLinear):
                 args = self.args
-                setattr(args, "lora_rank", args.max_lora_rank)
+                setattr(args, "lora_rank", lora_rank)
                 Flinear = FuseLinear(module_target.in_features, module_target.out_features, bias=bias, device=module_target.weight.device, dtype=module_target.weight.dtype, args = self.args)
                 state_dict = module_target.state_dict()
                 Flinear.load_state_dict(state_dict, strict=False)
@@ -345,11 +345,14 @@ class Fuser():
     
     @torch.no_grad()
     def fuse_one_layer(self, layers_origin, args):
+        max_dis = max(self.fuse_idx - 0, len(layers_origin) - 1 - self.fuse_idx) - 1
         for i in range(len(layers_origin)):
             if i == self.fuse_idx:
                 continue
             target_idx = i
-            layers_origin = self.fuse_by_coef(layers_origin, self.fuse_idx, target_idx)
+            dis = abs(self.fuse_idx - target_idx) - 1
+            lora_rank = (int)((max_dis - dis) * args.max_lora_rank + dis * args.min_lora_rank) / (max_dis)
+            layers_origin = self.fuse_by_coef(layers_origin, self.fuse_idx, target_idx, lora_rank)
             
         layers_out = self.remove_layer(layers_origin, self.fuse_idx)
         return layers_out

@@ -95,6 +95,7 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
     import math
 
     fuse_times = int(math.ceil(len(layers)*args.prune_rate))
+    print(f"Fuse times: {fuse_times}")
 
     fused_index = []
     unchanged_head_idx = -1
