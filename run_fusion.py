@@ -341,7 +341,8 @@ def fusion_eval(model, testenc, dev, eval_set, args):
     if args.coef_lora:
         results = results + ";coef-lora " + str(args.coef_lora)
     results = results + ";group_size: " + str(args.group_size)
-    results = results + ";lora_rank: " + str(args.lora_rank)
+    results = results + ";min_lora_rank: " + str(args.min_lora_rank)
+    results = results + ";max_lora_rank: " + str(args.max_lora_rank)
     results = results + ";prune_rate: " + str(args.prune_rate)
     results = results + '\n'
     if not os.path.exists(file_name):
@@ -409,7 +410,11 @@ if __name__ == '__main__':
         help='The dir to save the fused model.'
     )
     parser.add_argument(
-        '--lora-rank', type=int, default=128,
+        '--min-lora-rank', type=int, default=128,
+        help='Rank of lora for matrix coef decomp.'
+    )
+    parser.add_argument(
+        '--max-lora-rank', type=int, default=128,
         help='Rank of lora for matrix coef decomp.'
     )
     parser.add_argument(

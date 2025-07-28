@@ -313,7 +313,7 @@ class Fuser():
     @torch.no_grad()
     def fuse_by_coef(self, layers_origin, fuse_idx, target_idx):
         layer_2fuse = layers_origin[fuse_idx]
-        target_idx = target_idx
+        # target_idx = target_idx
         
         layer_target = layers_origin[target_idx]
         
@@ -324,6 +324,8 @@ class Fuser():
         for (name_2fuse, module_2fuse), (name_target, module_target) in zip(full_2fuse.items(), full_target.items()):
             bias = False if module_target.bias is None else True
             if not isinstance(module_target, FuseLinear):
+                args = self.args
+                setattr(args, "lora_rank", args.max_lora_rank)
                 Flinear = FuseLinear(module_target.in_features, module_target.out_features, bias=bias, device=module_target.weight.device, dtype=module_target.weight.dtype, args = self.args)
                 state_dict = module_target.state_dict()
                 Flinear.load_state_dict(state_dict, strict=False)
