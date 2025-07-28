@@ -326,7 +326,7 @@ class Fuser():
             if not isinstance(module_target, FuseLinear):
                 args = self.args
                 setattr(args, "lora_rank", lora_rank)
-                Flinear = FuseLinear(module_target.in_features, module_target.out_features, bias=bias, device=module_target.weight.device, dtype=module_target.weight.dtype, args = self.args)
+                Flinear = FuseLinear(module_target.in_features, module_target.out_features, bias=bias, device=module_target.weight.device, dtype=module_target.weight.dtype, args = args)
                 state_dict = module_target.state_dict()
                 Flinear.load_state_dict(state_dict, strict=False)
             else:
