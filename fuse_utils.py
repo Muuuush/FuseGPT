@@ -346,14 +346,18 @@ class Fuser():
     @torch.no_grad()
     def fuse_one_layer(self, layers_origin, args):
         max_dis = max(self.fuse_idx - 0, len(layers_origin) - 1 - self.fuse_idx) - 1
+        lora_ranks = []
         for i in range(len(layers_origin)):
             if i == self.fuse_idx:
+                lora_rank.append("removed")
                 continue
             target_idx = i
             dis = abs(self.fuse_idx - target_idx) - 1
             lora_rank = int(((max_dis - dis) * args.max_lora_rank + dis * args.min_lora_rank) / (max_dis))
+            lora_ranks.append(lora_rank)
             layers_origin = self.fuse_by_coef(layers_origin, self.fuse_idx, target_idx, lora_rank)
-            
+        
+        print(f"lora ranks: {lora_ranks}")
         layers_out = self.remove_layer(layers_origin, self.fuse_idx)
         return layers_out
 

@@ -437,6 +437,7 @@ if __name__ == '__main__':
 
     print("number of data: ", args.nsamples)
     print("model: ", args.model)
+    print("group size: ", args.group_size)
     print("cali_data: ", args.dataset)
 
     tick = time.time()
