@@ -227,7 +227,7 @@ def full_importance_eval(
     outs_cache_new = copy.deepcopy(outs_cache[0:unchanged_head_idx + 1]) + outs_cache_new
     del outs_cache
     # outs_full = outs_new
-    if original_outs != None:
+    if original_outs == None:
         original_outs = outs_new
     del inps_run_f
 
