@@ -100,12 +100,13 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
     fused_index = []
     unchanged_head_idx = -1
     outs_cache = []
+    original_outs = None
     for idx in range(fuse_times):
         layer_max = len(layers)
         importance_list = []
         if args.iterative:
 
-            importance_list, outs_cache = full_importance_eval(layers, inps_eval, attention_mask, position_ids, unchanged_head_idx, outs_cache)
+            importance_list, outs_cache = full_importance_eval(layers, inps_eval, attention_mask, position_ids, unchanged_head_idx, outs_cache, original_outs)
             fuse_idx = importance_list[0]
 
         else:

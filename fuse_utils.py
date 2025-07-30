@@ -203,7 +203,7 @@ def compute_inps_run(layers, inps_initial, attention_mask, position_ids, layer_s
 @torch.no_grad()
 def full_importance_eval(
     layers, inps_eval, attention_mask, position_ids,
-    unchanged_head_idx = -1, outs_cache = []
+    unchanged_head_idx = -1, outs_cache = [], original_outs = None
     ):
     eval_batch_n = 4
     if unchanged_head_idx == -1:
@@ -226,7 +226,9 @@ def full_importance_eval(
     
     outs_cache_new = copy.deepcopy(outs_cache[0:unchanged_head_idx + 1]) + outs_cache_new
     del outs_cache
-    outs_full = outs_new
+    # outs_full = outs_new
+    if original_outs != None:
+        original_outs = outs_new
     del inps_run_f
 
     inps_run = copy.deepcopy(inps_eval).to(device = 'cuda')
@@ -257,7 +259,7 @@ def full_importance_eval(
             outs_new = inps_run_t
 
         outs_part = outs_new
-        sim_i = F.cosine_similarity(outs_full, outs_part, dim = 3).mean()
+        sim_i = F.cosine_similarity(original_outs, outs_part, dim = 3).mean()
         sim.append(sim_i)
         del outs_part, outs_new
     del inps_run
