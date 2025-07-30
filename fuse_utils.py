@@ -352,7 +352,7 @@ class Fuser():
                 lora_rank_list.append("removed")
                 continue
             target_idx = i
-            lora_rank = int(args.min_lora_rank + (self.importance_list.index(i) - 1) / (len(self.importance_list) - 2) * (args.max_lora_rank - args.min_lora_rank))
+            lora_rank = int(args.min_lora_rank + (self.importance_list[i] - 1) / (len(self.importance_list) - 2) * (args.max_lora_rank - args.min_lora_rank))
             lora_rank_list.append(lora_rank)
             layers_origin = self.fuse_by_coef(layers_origin, self.fuse_idx, target_idx, lora_rank)
         
