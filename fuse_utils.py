@@ -270,7 +270,7 @@ def full_importance_eval(
     
 class Fuser():
     
-    def __init__(self, layers_2fuse, inps, attention_mask, position_ids, fuse_idx, target_idx, args):
+    def __init__(self, layers_2fuse, inps, attention_mask, position_ids, fuse_idx, target_idx, importance_list, args):
         
         self.layers_2fuse = layers_2fuse
         self.inps = inps
@@ -279,6 +279,7 @@ class Fuser():
         self.fuse_idx = fuse_idx
         self.target_idx = target_idx
         self.eval_batch_n = 4
+        self.importance_list = importance_list
         self.args = args
     
     @torch.no_grad()
@@ -345,19 +346,17 @@ class Fuser():
     
     @torch.no_grad()
     def fuse_one_layer(self, layers_origin, args):
-        max_dis = max(self.fuse_idx - 0, len(layers_origin) - 1 - self.fuse_idx) - 1
         lora_ranks = []
         for i in range(len(layers_origin)):
             if i == self.fuse_idx:
-                lora_rank.append("removed")
+                lora_ranks.append("removed")
                 continue
             target_idx = i
-            dis = abs(self.fuse_idx - target_idx) - 1
-            lora_rank = int(((max_dis - dis) * args.max_lora_rank + dis * args.min_lora_rank) / (max_dis))
+            lora_rank = int(args.max_lora_rank + self.importance_list.index(i) / (len(layers_origin) - 2) * (args.min_lora_rank - args.max_lora_rank))
             lora_ranks.append(lora_rank)
             layers_origin = self.fuse_by_coef(layers_origin, self.fuse_idx, target_idx, lora_rank)
         
-        print(f"lora ranks: {lora_ranks}")
+        print("lora ranks:", lora_ranks)
         layers_out = self.remove_layer(layers_origin, self.fuse_idx)
         return layers_out
 

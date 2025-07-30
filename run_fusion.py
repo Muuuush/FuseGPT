@@ -102,6 +102,7 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
     outs_cache = []
     for idx in range(fuse_times):
         layer_max = len(layers)
+        importance_list = []
         if args.iterative:
 
             importance_list, outs_cache = full_importance_eval(layers, inps_eval, attention_mask, position_ids, unchanged_head_idx, outs_cache)
@@ -158,7 +159,8 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
 
         inps_run = compute_inps_run(layers, inps, attention_mask, position_ids, layer_start_idx = group[0], args = args)
 
-        Fuse_manager = Fuser(layers_2fuse, inps_run, attention_mask, position_ids, fuse_idx_t, target_idx_t, args)
+        importance_list = [group.index(i) for i in importance_list if i in group]
+        Fuse_manager = Fuser(layers_2fuse, inps_run, attention_mask, position_ids, fuse_idx_t, target_idx_t, importance_list, args)
 
         Fuse_manager.compute_full_states()
 
