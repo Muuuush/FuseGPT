@@ -78,7 +78,7 @@ class FuseLinear(torch.nn.Module):
                     linear_2fuse.coef[0].data.to(device=linear_2fuse.weight.device),
                     linear_2fuse.coef[1].data.to(device=linear_2fuse.weight.device)) if linear_2fuse.coef_lora \
                         else linear_2fuse.coef.data.to(device=linear_2fuse.weight.device)
-                weight_2fuse += linear_2fuse.weight.data * coef
+                weight_2fuse += linear_2fuse.weight.data + linear_2fuse.weight.data * coef
             else:
                 weight_2fuse += linear_2fuse.weight.data
             
@@ -141,7 +141,7 @@ class FuseLinear(torch.nn.Module):
         fused_weight = torch.zeros_like(self.weight)
         if self.self_coef:
             coef = torch.matmul(self.coef[0].data.to(device=input.device), self.coef[1].data.to(device=input.device)) if self.coef_lora else self.coef.data.to(device=input.device)
-            fused_weight += self.weight.data * coef
+            fused_weight += self.weight.data + self.weight.data * coef
         else:
             fused_weight += self.weight.data
         if True:
