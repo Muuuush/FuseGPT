@@ -30,6 +30,7 @@ class FuseLinear(torch.nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
+        self.self_coef = args.self_coef
         self.coef_matrix = args.coef_matrix
         self.coef_lora = args.coef_lora
         self.lora_rank = args.lora_rank
@@ -58,6 +59,13 @@ class FuseLinear(torch.nn.Module):
             else:
                 self.coef_list = nn.ParameterList([nn.Parameter(torch.zeros((out_features, in_features), **factory_kwargs))])
 
+        if args.self_coef:
+            if self.coef_lora:
+                self.coef = nn.ParameterList([nn.Parameter(torch.zeros((out_features, self.lora_rank), **factory_kwargs)), nn.Parameter(torch.zeros((self.lora_rank, in_features), **factory_kwargs))])
+                nn.init.kaiming_uniform_(self.coef[1], a=math.sqrt(5))
+            else:
+                self.coef = nn.Parameter(torch.zeros((out_features, in_features), **factory_kwargs))
+
         self.add_weight_list = []
         self.new = True
 
@@ -65,7 +73,15 @@ class FuseLinear(torch.nn.Module):
     def do_fuse(self, linear_2fuse):
         if isinstance(linear_2fuse, FuseLinear):
             weight_2fuse = torch.zeros_like(linear_2fuse.weight.data)
-            weight_2fuse += linear_2fuse.weight.data
+            if linear_2fuse.self_coef:
+                coef = torch.matmul(
+                    linear_2fuse.coef[0].data.to(device=linear_2fuse.weight.device),
+                    linear_2fuse.coef[1].data.to(device=linear_2fuse.weight.device)) if linear_2fuse.coef_lora \
+                        else linear_2fuse.coef.data.to(device=linear_2fuse.weight.device)
+                weight_2fuse += linear_2fuse.weight.data * coef
+            else:
+                weight_2fuse += linear_2fuse.weight.data
+            
             if True:
                 weight_2fuse += torch.matmul(linear_2fuse.lora_B.data, linear_2fuse.lora_A.data)
 
@@ -123,7 +139,11 @@ class FuseLinear(torch.nn.Module):
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         fused_weight = torch.zeros_like(self.weight)
-        fused_weight += self.weight
+        if self.self_coef:
+            coef = torch.matmul(self.coef[0].data.to(device=input.device), self.coef[1].data.to(device=input.device)) if self.coef_lora else self.coef.data.to(device=input.device)
+            fused_weight += self.weight.data * coef
+        else:
+            fused_weight += self.weight.data
         if True:
             fused_weight += torch.matmul(self.lora_B, self.lora_A)
         for coef, add_w in zip(self.coef_list, self.add_weight_list):

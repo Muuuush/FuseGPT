@@ -393,6 +393,10 @@ if __name__ == '__main__':
         help='Whether to iterative compute block importance when running fusion.'
     )
     parser.add_argument(
+        '--self-coef', action='store_true',
+        help='Whether to use coef of original weight during fusion.'
+    )
+    parser.add_argument(
         '--coef-matrix', action='store_true',
         help='Whether to use matrix size coef during fusion.'
     )
