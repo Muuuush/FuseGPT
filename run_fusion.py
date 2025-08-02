@@ -94,26 +94,29 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
 
     import math
 
-    fuse_times = int(math.ceil(len(layers)*args.prune_rate))
+    # fuse_times = int(math.ceil(len(layers)*args.prune_rate))
+    fuse_times = 1
 
     fused_index = []
     unchanged_head_idx = -1
     outs_cache = []
     for idx in range(fuse_times):
         layer_max = len(layers)
-        if args.iterative:
+        if args.rm == 0:
+            if args.iterative:
 
-            importance_list, outs_cache = full_importance_eval(layers, inps_eval, attention_mask, position_ids, unchanged_head_idx, outs_cache)
-            fuse_idx = importance_list[0]
+                importance_list, outs_cache = full_importance_eval(layers, inps_eval, attention_mask, position_ids, unchanged_head_idx, outs_cache)
+                fuse_idx = importance_list[0]
 
-        else:
-            fuse_ori = removed_list[idx]
-            for cnt, layer in enumerate(layers):
-                if layer.self_attn.layer_idx == fuse_ori:
-                    fuse_idx = cnt
-                    break
-                else:
-                    continue
+            else:
+                fuse_ori = removed_list[idx]
+                for cnt, layer in enumerate(layers):
+                    if layer.self_attn.layer_idx == fuse_ori:
+                        fuse_idx = cnt
+                        break
+                    else:
+                        continue
+        fuse_idx = args.rm
         fused_index.append(layers[fuse_idx].self_attn.layer_idx)
         print('fuse_layers: ', fused_index)
         
@@ -433,38 +436,40 @@ if __name__ == '__main__':
     print("model: ", args.model)
     print("cali_data: ", args.dataset)
 
-    tick = time.time()
-    fused_model = fusion_sequential(model, dataloader, DEV, args)
-    run_time = time.time() - tick
-    print("Runtime of Fusion: ", run_time)
-    file_name = "results.txt"
-    if 'llama-3' in args.model.lower():
-        file_name = "results-llama3.txt"
-    if 'llama-2' in args.model.lower():
-        file_name = "results-llama2.txt"
-    if 'llava' in args.model.lower():
-        file_name = "results-llava.txt"    
-    if 'tiny' in args.model.lower():
-        file_name = "results-tiny-llama.txt"
-    with open(file_name, "a") as file:
-        file.write(f"runtime: {run_time}\n")
+    for rm in range(0, len(22)):
+        setattr(args, "rm", rm)
+        tick = time.time()
+        fused_model = fusion_sequential(model, dataloader, DEV, args)
+        run_time = time.time() - tick
+        print("Runtime of Fusion: ", run_time)
+        file_name = "results.txt"
+        if 'llama-3' in args.model.lower():
+            file_name = "results-llama3.txt"
+        if 'llama-2' in args.model.lower():
+            file_name = "results-llama2.txt"
+        if 'llava' in args.model.lower():
+            file_name = "results-llava.txt"    
+        if 'tiny' in args.model.lower():
+            file_name = "results-tiny-llama.txt"
+        with open(file_name, "a") as file:
+            file.write(f"runtime: {run_time}\n")
 
-    if args.save:
-        from transformers import AutoTokenizer 
-        tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=False)
-        model_name = args.model.split("/")[-1]
-        folder_name = f"{model_name}_{args.dataset}_{args.prune_rate}_{args.nsamples}"
-        output_dir = os.path.join(args.save_dir, folder_name)
-        save_hf_format(fused_model, tokenizer, output_dir = output_dir)
+        if args.save:
+            from transformers import AutoTokenizer 
+            tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=False)
+            model_name = args.model.split("/")[-1]
+            folder_name = f"{model_name}_{args.dataset}_{args.prune_rate}_{args.nsamples}"
+            output_dir = os.path.join(args.save_dir, folder_name)
+            save_hf_format(fused_model, tokenizer, output_dir = output_dir)
 
-    datasets = ['wikitext2', 'c4-new']
-    for dataset in datasets:
-        dataloader, testloader = get_loaders(
-            dataset, seed=args.seed, model=args.model, seqlen=model.seqlen
-        )
-        print(dataset)
-        eval_set = dataset
-        fusion_eval(fused_model, testloader, DEV, eval_set, args)
+        datasets = ['wikitext2', 'c4-new']
+        for dataset in datasets:
+            dataloader, testloader = get_loaders(
+                dataset, seed=args.seed, model=args.model, seqlen=model.seqlen
+            )
+            print(dataset)
+            eval_set = dataset
+            fusion_eval(fused_model, testloader, DEV, eval_set, args)
 
     print("number of data: ", args.nsamples)
     print("model: ", args.model)

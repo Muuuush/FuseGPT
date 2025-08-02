@@ -262,6 +262,7 @@ def full_importance_eval(
         del outs_part, outs_new
     del inps_run
     
+    print(f"MI: {[float(sim_i) for sim_i in sim]}")
     sim = torch.tensor(sim)
 
     out_idx = torch.argsort(sim, descending = True)
