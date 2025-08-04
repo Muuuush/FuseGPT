@@ -45,7 +45,7 @@ def get_QA(nsamples, seed, seqlen, model_name, bsz = 8):
         tar_i = None
         for j in range(bsz):
 
-            inp = complete_text_and_decode(questions[i * bsz + j])
+            inp = complete_text_and_decode(questions[i + j])
             tar = inp.clone()
             tar[:, :-1] = -100
             if batch_i is None:
