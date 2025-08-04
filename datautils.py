@@ -17,7 +17,7 @@ def get_QA(nsamples, seed, seqlen, model_name, model, bsz = 8):
     choices = []
     choices_lists = mmlu_full["test"]["choices"]
     for l in choices_lists:
-        choice = "\n".join(l)
+        choice = "Choices:\n" + "\n".join(l)
         choices.append(choice)
 
     from transformers import AutoTokenizer
@@ -32,9 +32,19 @@ def get_QA(nsamples, seed, seqlen, model_name, model, bsz = 8):
     import random
     random.seed(seed)
     traindata = []
-    for i in tqdm(random.sample(range(len(questions)), 256), desc= 'Generating QA dataset...'):
-        traindata.append(complete_text(questions[i] + "\n" + choices[i]))
-    trainenc = tokenizer("\n\n".join(traindata), return_tensors='pt')
+    file_name = "QAdata.txt"
+    try:
+        with open(file_name, 'r') as file:
+            train_text = file.read()
+            trainenc = tokenizer(train_text, return_tensors='pt')
+    except FileNotFoundError:
+        for i in tqdm(random.sample(range(len(questions)), 2024), desc= 'Generating QA dataset...'):
+            traindata.append(complete_text(questions[i] + "\n" + choices[i]))
+        train_text = "\n\n".join(traindata)
+        trainenc = tokenizer(train_text, return_tensors='pt')
+        with open(file_name, 'w') as file:
+            file.write(train_text)
+
     trainloader = []
     for _ in tqdm(range(0, nsamples, bsz), desc= 'Sampling...'):
         batch_i = None
