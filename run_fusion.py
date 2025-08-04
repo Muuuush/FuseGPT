@@ -125,12 +125,10 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
         if fuse_idx == 0:
             group = list(range(0, fuse_step))
         else:
-            if target_idx - (fuse_step/2-1) < 0:
-                group = list(range(0, fuse_step))
-            elif fuse_idx + (fuse_step/2-1) > len(layers)-1:
-                group = list(range(layer_max-fuse_step, layer_max))
+            if fuse_idx + (fuse_step - 1) > len(layers) - 1:
+                group = list(range(layer_max - fuse_step, layer_max))
             else:
-                group = list(range(target_idx-(int(fuse_step/2)-1), fuse_idx + (int(fuse_step/2)-1)+1))
+                group = list(range(fuse_idx, fuse_idx + fuse_step))
 
         fuse_idx_t = fuse_idx - group[0]
         target_idx_t = target_idx -group[0]
