@@ -13,7 +13,7 @@ def set_seed(seed):
 def get_QA(nsamples, seed, seqlen, model_name, bsz = 8):
     from datasets import load_dataset
     mmlu_full = load_dataset("cais/mmlu", "all")
-    questions = mmlu_full["test"]["questions"]
+    questions = mmlu_full["test"]["question"]
 
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
