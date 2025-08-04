@@ -10,42 +10,44 @@ def set_seed(seed):
     torch.random.manual_seed(seed)
 
 
-def get_QA(nsamples, seed, seqlen, model_name, bsz = 8):
+def get_QA(nsamples, seed, seqlen, model_name, model, bsz = 8):
     from datasets import load_dataset
     mmlu_full = load_dataset("cais/mmlu", "all")
     questions = mmlu_full["test"]["question"]
+    choices = []
+    choices_lists = mmlu_full["test"]["choice"]
+    for l in choices_lists:
+        choice = "\n".join(l)
+        choices.append(choice)
 
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-    if 'llava' in model_name.lower():
-        from llava.model import LlavaLlamaForCausalLM
-
-        model = LlavaLlamaForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, device_map = 'auto')
-        model.seqlen = 2048
-    else:
-        from transformers import LlamaForCausalLM
-        model = LlamaForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, device_map = 'auto')
-        model.seqlen = 2048
-    def complete_text_and_decode(question):
-        inputs = tokenizer(question, return_tensors="pt").to("cuda")
+    def complete_text(text):
+        inputs = tokenizer(text, return_tensors="pt").to("cuda")
         current_len = inputs.input_ids.shape[1]
         max_new_tokens = seqlen - current_len
         if max_new_tokens < 0:
             return inputs[:,:seqlen]
         # generate text
         outputs = model.generate(**inputs, max_new_tokens=max_new_tokens, pad_token_id=tokenizer.eos_token_id, do_sample=False)
-        return outputs
+        return tokenizer.decode(outputs, skip_special_tokens=True)
     
+
     import random
     random.seed(seed)
-    questions = random.sample(questions, nsamples)
+    traindata = []
+    for i in tqdm(range(len(questions)), desc= 'Generating QA dataset...'):
+        traindata.append(complete_text(questions[i] + "\n" + choices[i]))
+    trainenc = tokenizer("\n\n".join(traindata), return_tensors='pt')
     trainloader = []
-    for i in tqdm(range(0, nsamples, bsz), desc= 'Generating QA dataset'):
+    for _ in tqdm(range(0, nsamples, bsz), desc= 'Sampling...'):
         batch_i = None
         tar_i = None
-        for j in range(bsz):
+        for _ in range(bsz):
 
-            inp = complete_text_and_decode(questions[i + j])
+            i = random.randint(0, trainenc.input_ids.shape[1] - seqlen - 1)
+            j = i + seqlen
+            inp = trainenc.input_ids[:, i:j]
             tar = inp.clone()
             tar[:, :-1] = -100
             if batch_i is None:
@@ -243,17 +245,17 @@ def get_c4_new(nsamples, seed, seqlen, model):
 
 
 def get_loaders(
-    name, nsamples=128, seed=0, seqlen=2048, model=''
+    name, nsamples=128, seed=0, seqlen=2048, model_name='', model = None
 ):
     if 'wikitext2' in name:
-        return get_wikitext2(nsamples, seed, seqlen, model)
+        return get_wikitext2(nsamples, seed, seqlen, model_name)
     if 'ptb' in name:
         if 'new' in name:
-            return get_ptb_new(nsamples, seed, seqlen, model)
-        return get_ptb(nsamples, seed, seqlen, model)
+            return get_ptb_new(nsamples, seed, seqlen, model_name)
+        return get_ptb(nsamples, seed, seqlen, model_name)
     if 'c4' in name:
         if 'new' in name:
-            return get_c4_new(nsamples, seed, seqlen, model)
-        return get_c4(nsamples, seed, seqlen, model)
+            return get_c4_new(nsamples, seed, seqlen, model_name)
+        return get_c4(nsamples, seed, seqlen, model_name)
     if "QA" in name:
-        return get_QA(nsamples, seed, seqlen, model)
+        return get_QA(nsamples, seed, seqlen, model_name, model)

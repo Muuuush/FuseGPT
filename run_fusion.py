@@ -426,7 +426,7 @@ if __name__ == '__main__':
     model.eval()
     
     dataloader, testloader = get_loaders(
-        args.dataset, nsamples=args.nsamples, seed=args.seed, model=args.model, seqlen=model.seqlen
+        args.dataset, nsamples=args.nsamples, seed=args.seed, model_name=args.model, seqlen=model.seqlen, model=model
     )
 
     print("number of data: ", args.nsamples)
@@ -460,7 +460,7 @@ if __name__ == '__main__':
     datasets = ['wikitext2', 'c4-new']
     for dataset in datasets:
         dataloader, testloader = get_loaders(
-            dataset, seed=args.seed, model=args.model, seqlen=model.seqlen
+            dataset, seed=args.seed, model_name=args.model, seqlen=model.seqlen
         )
         print(dataset)
         eval_set = dataset
