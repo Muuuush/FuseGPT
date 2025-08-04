@@ -30,7 +30,7 @@ def get_QA(nsamples, seed, seqlen, model_name, model, bsz = 8):
             return inputs[:,:seqlen]
         # generate text
         outputs = model.generate(**inputs, max_new_tokens=max_new_tokens, pad_token_id=tokenizer.eos_token_id, do_sample=False)
-        return tokenizer.decode(outputs, skip_special_tokens=True)
+        return tokenizer.decode(outputs[0], skip_special_tokens=True)
     
 
     import random
