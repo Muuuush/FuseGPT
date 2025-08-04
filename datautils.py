@@ -27,9 +27,10 @@ def get_QA(nsamples, seed, seqlen, model_name, model, bsz = 8):
         current_len = inputs.input_ids.shape[1]
         max_new_tokens = seqlen - current_len
         if max_new_tokens < 0:
-            return inputs[:,:seqlen]
+            return text[:seqlen]
         # generate text
         outputs = model.generate(**inputs, max_new_tokens=max_new_tokens, pad_token_id=tokenizer.eos_token_id, do_sample=False)
+        print(outputs.shape)
         return tokenizer.decode(outputs[0], skip_special_tokens=True)
     
 
