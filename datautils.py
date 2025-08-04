@@ -15,7 +15,7 @@ def get_QA(nsamples, seed, seqlen, model_name, model, bsz = 8):
     mmlu_full = load_dataset("cais/mmlu", "all")
     questions = mmlu_full["test"]["question"]
     choices = []
-    choices_lists = mmlu_full["test"]["choice"]
+    choices_lists = mmlu_full["test"]["choices"]
     for l in choices_lists:
         choice = "\n".join(l)
         choices.append(choice)
