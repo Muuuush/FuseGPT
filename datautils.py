@@ -36,7 +36,7 @@ def get_QA(nsamples, seed, seqlen, model_name, model, bsz = 8):
     import random
     random.seed(seed)
     traindata = []
-    for i in tqdm(random.sample(range(len(questions), 128)), desc= 'Generating QA dataset...'):
+    for i in tqdm(random.sample(range(len(questions)), 128), desc= 'Generating QA dataset...'):
         traindata.append(complete_text(questions[i] + "\n" + choices[i]))
     trainenc = tokenizer("\n\n".join(traindata), return_tensors='pt')
     trainloader = []
