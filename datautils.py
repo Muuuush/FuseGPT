@@ -17,7 +17,7 @@ def get_QA(nsamples, seed, seqlen, model_name, bsz = 8):
 
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-    if 'llava' in model.lower():
+    if 'llava' in model_name.lower():
         from llava.model import LlavaLlamaForCausalLM
 
         model = LlavaLlamaForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, device_map = 'auto')
