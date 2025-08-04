@@ -109,6 +109,7 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
 
             importance_list, outs_cache = full_importance_eval(layers, inps_eval, attention_mask, position_ids, unchanged_head_idx, outs_cache, original_outs)
             dangerous_list = importance_list[1 : fuse_times - idx]
+            print(f"Dangerous list: {dangerous_list}")
             fuse_idx = importance_list[0]
 
         else:
