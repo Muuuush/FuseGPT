@@ -365,7 +365,7 @@ if __name__ == '__main__':
         help='Model to load; pass location of hugginface converted checkpoint.'
     )
     parser.add_argument(
-        'dataset', type=str, choices=['wikitext2', 'ptb', 'c4'],
+        'dataset', type=str, choices=['wikitext2', 'ptb', 'c4', "QA"],
         help='Where to extract calibration data from.'
     )
     parser.add_argument(

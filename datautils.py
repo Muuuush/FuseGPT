@@ -2,12 +2,60 @@ import numpy as np
 import torch
 
 import datasets
+from tqdm import tqdm
 
 
 def set_seed(seed):
     np.random.seed(seed)
     torch.random.manual_seed(seed)
 
+
+def get_QA(nsamples, seed, seqlen, model_name, bsz = 8):
+    from datasets import load_dataset
+    mmlu_full = load_dataset("cais/mmlu", "all")
+    questions = [item["question"] for item in mmlu_full]
+
+    from transformers import AutoTokenizer
+    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
+    if 'llava' in model.lower():
+        from llava.model import LlavaLlamaForCausalLM
+
+        model = LlavaLlamaForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, device_map = 'auto')
+        model.seqlen = 2048
+    else:
+        from transformers import LlamaForCausalLM
+        model = LlamaForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, device_map = 'auto')
+        model.seqlen = 2048
+    def complete_text_and_decode(question):
+        inputs = tokenizer(question, return_tensors="pt").to("cuda")
+        current_len = inputs.input_ids.shape[1]
+        max_new_tokens = seqlen - current_len
+        if max_new_tokens < 0:
+            return inputs[:,:seqlen]
+        # generate text
+        outputs = model.generate(**inputs, max_new_tokens=max_new_tokens, pad_token_id=tokenizer.eos_token_id, do_sample=False)
+        return outputs
+    
+    import random
+    random.seed(seed)
+    questions = random.sample(questions, nsamples)
+    trainloader = []
+    for i in tqdm(range(0, nsamples, bsz), desc= 'Generating QA dataset'):
+        batch_i = None
+        tar_i = None
+        for j in range(bsz):
+
+            inp = complete_text_and_decode(questions[i * bsz + j])
+            tar = inp.clone()
+            tar[:, :-1] = -100
+            if batch_i is None:
+                batch_i = inp
+                tar_i = tar
+            else:
+                batch_i = torch.cat((batch_i, inp), 0)
+                tar = torch.cat((tar_i, tar), 0)
+        trainloader.append((batch_i, tar_i))
+    return trainloader, None
 
 def get_wikitext2(nsamples, seed, seqlen, model, bsz = 8):
     from datasets import load_dataset
@@ -207,3 +255,5 @@ def get_loaders(
         if 'new' in name:
             return get_c4_new(nsamples, seed, seqlen, model)
         return get_c4(nsamples, seed, seqlen, model)
+    if "QA" in name:
+        return get_QA(nsamples, seed, seqlen, model)
