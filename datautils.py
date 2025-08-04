@@ -22,22 +22,21 @@ def get_QA(nsamples, seed, seqlen, model_name, model, bsz = 8):
 
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-    def complete_text(text):
+    def complete_text(text, max_len = 512):
         inputs = tokenizer(text, return_tensors="pt").to("cuda")
         current_len = inputs.input_ids.shape[1]
-        max_new_tokens = seqlen - current_len
+        max_new_tokens = max_len - current_len
         if max_new_tokens < 0:
-            return text[:seqlen]
+            return text[:max_len]
         # generate text
         outputs = model.generate(**inputs, max_new_tokens=max_new_tokens, pad_token_id=tokenizer.eos_token_id, do_sample=False)
-        print(outputs.shape)
         return tokenizer.decode(outputs[0], skip_special_tokens=True)
     
 
     import random
     random.seed(seed)
     traindata = []
-    for i in tqdm(range(len(questions)), desc= 'Generating QA dataset...'):
+    for i in tqdm(random.sample(range(len(questions), 128)), desc= 'Generating QA dataset...'):
         traindata.append(complete_text(questions[i] + "\n" + choices[i]))
     trainenc = tokenizer("\n\n".join(traindata), return_tensors='pt')
     trainloader = []
