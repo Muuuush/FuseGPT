@@ -331,7 +331,7 @@ def fuse_importance_eval(
         fused_layers = Fuse_manager.fuse_one_layer(layers_2fuse, eval_args)
         fused_layers.cuda()
         layers_unfuse_right.cuda()
-        fused_layers = Fuse_manager.update(layers_new, inps_run, inps_eval, eval_args)
+        fused_layers = Fuse_manager.update(fused_layers, inps_run, inps_eval, eval_args)
         layers_new = fused_layers + layers_unfuse_right
         torch.cuda.empty_cache()
 
