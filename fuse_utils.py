@@ -270,12 +270,12 @@ def full_importance_eval(
     return out_idx, outs_cache_new
 
 def fuse_importance_eval(
-    layers, inps_eval, attention_mask, position_ids,
+    layers, inps, attention_mask, position_ids,
     eval_args, unchanged_head_idx = -1, outs_cache = []
     ):
     eval_batch_n = 4
     if unchanged_head_idx == -1:
-        inps_run_f = copy.deepcopy(inps_eval).to(device = 'cuda')
+        inps_run_f = copy.deepcopy(inps).to(device = 'cuda')
     else:
         inps_run_f = copy.deepcopy(outs_cache[unchanged_head_idx]).to(device = "cuda")
     outs_cache_new = []
@@ -283,9 +283,9 @@ def fuse_importance_eval(
     with torch.no_grad():
         for i in range(unchanged_head_idx + 1, len(layers)):
 
-            outs_new = torch.zeros((eval_batch_n, inps_run_f.shape[1], inps_run_f.shape[2], inps_run_f.shape[3]), dtype=inps_run_f.dtype, device='cuda')
+            outs_new = torch.zeros_like(inps)
             layer = layers[i]
-            for j in range(eval_batch_n):
+            for j in range(inps.shape[0]):
                 outs_new[j] = layer(inps_run_f[j], attention_mask=attention_mask, position_ids=position_ids)[0]
 
             torch.cuda.empty_cache()
@@ -298,7 +298,7 @@ def fuse_importance_eval(
     outs_full = outs_new
     del inps_run_f
 
-    inps_run = copy.deepcopy(inps_eval).to(device = 'cuda')
+    inps_run = copy.deepcopy(inps).to(device = 'cuda')
     sim= []
     layers.cpu()
     fuse_step = eval_args.eval_group_size
@@ -344,7 +344,7 @@ def fuse_importance_eval(
         fused_layers = Fuse_manager.fuse_one_layer(layers_2fuse, eval_args)
         fused_layers.cuda()
         layers_unfuse_right.cuda()
-        fused_layers = Fuse_manager.update(fused_layers, inps_run_t, inps_eval, eval_args, True)
+        fused_layers = Fuse_manager.update(fused_layers, inps_run_t, inps_run_t[:eval_batch_n], eval_args, True)
         layers_new = fused_layers + layers_unfuse_right
         torch.cuda.empty_cache()
 
@@ -356,10 +356,10 @@ def fuse_importance_eval(
         with torch.no_grad():
 
             for k in range(0, len(layers_new)):
-                outs_new = torch.zeros((eval_batch_n, inps_run_t.shape[1], inps_run_t.shape[2], inps_run_t.shape[3]), dtype=inps_run_t.dtype, device='cuda')
+                outs_new = torch.zeros_like(inps)
 
                 layer = layers_new[k]
-                for j in range(eval_batch_n):
+                for j in range(inps.shape[0]):
                     outs_new[j] = layer(inps_run_t[j], attention_mask=attention_mask, position_ids=position_ids)[0]
 
                 torch.cuda.empty_cache()

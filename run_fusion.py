@@ -94,7 +94,7 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
         if not args.fuse_eval:
             importance_list, outs_cache = full_importance_eval(layers, inps_eval, attention_mask, position_ids)
         else:
-            importance_list = fuse_importance_eval(layers, inps_eval, attention_mask, position_ids, eval_args)
+            importance_list = fuse_importance_eval(layers, inps, attention_mask, position_ids, eval_args)
         removed_list = importance_list[:len(layers)//4]
         print(removed_list)
 
@@ -113,7 +113,7 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
             if not args.fuse_eval:
                 importance_list, outs_cache = full_importance_eval(layers, inps_eval, attention_mask, position_ids, unchanged_head_idx, outs_cache)
             else:
-                importance_list, outs_cache = fuse_importance_eval(layers, inps_eval, attention_mask, position_ids, eval_args, unchanged_head_idx, outs_cache)
+                importance_list, outs_cache = fuse_importance_eval(layers, inps, attention_mask, position_ids, eval_args, unchanged_head_idx, outs_cache)
             fuse_idx = importance_list[0]
 
         else:
