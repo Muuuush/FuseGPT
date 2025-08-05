@@ -331,7 +331,7 @@ def fuse_importance_eval(
         fused_layers = Fuse_manager.fuse_one_layer(layers_2fuse, eval_args)
         fused_layers.cuda()
         layers_unfuse_right.cuda()
-        fused_layers = Fuse_manager.update(fused_layers, inps_run, inps_eval, eval_args)
+        fused_layers = Fuse_manager.update(fused_layers, inps_run, inps_eval, eval_args, False)
         layers_new = fused_layers + layers_unfuse_right
         torch.cuda.empty_cache()
 
@@ -457,7 +457,7 @@ class Fuser():
         return layers_out
 
 
-    def update(self, layers_new, inps_run, inps_eval, args):
+    def update(self, layers_new, inps_run, inps_eval, args, log = True):
         inps_run_f = copy.deepcopy(inps_eval).to(device = 'cuda')
 
         criterion = nn.MSELoss()
@@ -517,7 +517,8 @@ class Fuser():
         layers_new.cuda()
         layers_new.train()
         
-        for epoch in tqdm(range(max_epochs), desc = 'Fused Layers Updating...'):
+        counter = tqdm(range(max_epochs), desc = 'Fused Layers Updating...') if log else range(max_epochs)
+        for epoch in counter:
 
             total_loss = 0.0
             for j in range(self.n_batchs):
