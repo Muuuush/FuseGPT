@@ -304,11 +304,11 @@ def fuse_importance_eval(
 
         tmp_group = []
         if i > 0 and i < len(layers) - 1:
-            tmp_group = [range(i - 1, i + 2)]
+            tmp_group = list(range(i - 1, i + 2))
         elif i == 0 and i < len(layers) - 1:
-            tmp_group = [range(i, min(i + 3, len(layers)))]
+            tmp_group = list(range(i, min(i + 3, len(layers))))
         elif i > 0 and i == len(layers) - 1:
-            tmp_group = [range(max(i - 2, 0), len(layers))]
+            tmp_group = list(range(max(i - 2, 0), len(layers)))
         else:
             tmp_group = [i]
         fuse_idx_t = i - tmp_group[0]
