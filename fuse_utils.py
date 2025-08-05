@@ -270,14 +270,13 @@ def full_importance_eval(
     
 class Fuser():
     
-    def __init__(self, layers_2fuse, inps, attention_mask, position_ids, fuse_idx, target_idx, args):
+    def __init__(self, layers_2fuse, inps, attention_mask, position_ids, fuse_idx, args):
         
         self.layers_2fuse = layers_2fuse
         self.inps = inps
         self.attention_mask = attention_mask
         self.position_ids = position_ids
         self.fuse_idx = fuse_idx
-        self.target_idx = target_idx
         self.eval_batch_n = 4
         self.args = args
     

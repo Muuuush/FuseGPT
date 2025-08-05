@@ -116,24 +116,18 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
                     continue
         fused_index.append(layers[fuse_idx].self_attn.layer_idx)
         print('fuse_layers: ', fused_index)
-        
-        if fuse_idx == 0:
-            target_idx = 1
-        else:
-            target_idx = fuse_idx -1
 
         if fuse_idx == 0:
             group = list(range(0, fuse_step))
         else:
-            if target_idx - (fuse_step/2-1) < 0:
+            if fuse_idx - 1 - (fuse_step / 2 - 1) < 0:
                 group = list(range(0, fuse_step))
-            elif fuse_idx + (fuse_step/2-1) > len(layers)-1:
+            elif fuse_idx + (fuse_step / 2 - 1) > len(layers) - 1:
                 group = list(range(layer_max-fuse_step, layer_max))
             else:
-                group = list(range(target_idx-(int(fuse_step/2)-1), fuse_idx + (int(fuse_step/2)-1)+1))
+                group = list(range(fuse_idx - 1 - (int(fuse_step / 2) - 1), fuse_idx + (int(fuse_step / 2) - 1) + 1))
 
         fuse_idx_t = fuse_idx - group[0]
-        target_idx_t = target_idx -group[0]
 
         layers_2fuse = nn.ModuleList(
                 [layers[layer_idx] for layer_idx in group]
@@ -157,7 +151,7 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
 
         inps_run = compute_inps_run(layers, inps, attention_mask, position_ids, layer_start_idx = group[0], args = args)
 
-        Fuse_manager = Fuser(layers_2fuse, inps_run, attention_mask, position_ids, fuse_idx_t, target_idx_t, args)
+        Fuse_manager = Fuser(layers_2fuse, inps_run, attention_mask, position_ids, fuse_idx_t, args)
 
         Fuse_manager.compute_full_states()
 
