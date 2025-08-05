@@ -298,7 +298,7 @@ def fuse_importance_eval(
             else:
                 tmp_group = list(range(fuse_idx - 1 - (int(fuse_step / 2) - 1), fuse_idx + (int(fuse_step / 2) - 1) + 1))
 
-        fuse_idx_t = i - tmp_group[0]
+        fuse_idx_t = fuse_idx - tmp_group[0]
         layers_2fuse = copy.deepcopy(nn.ModuleList(
                 [layers[layer_idx] for layer_idx in tmp_group]
             )).cuda()
