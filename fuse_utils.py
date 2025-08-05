@@ -336,7 +336,7 @@ def fuse_importance_eval(
         torch.cuda.empty_cache()
 
 
-        if tmp_unchanged_head_idx == 0:
+        if tmp_unchanged_head_idx == -1:
             inps_run_t = copy.deepcopy(inps_run).to(device = 'cuda')
         else:
             inps_run_t = copy.deepcopy(outs_cache_new[tmp_unchanged_head_idx - 1]).to(device = "cuda")
