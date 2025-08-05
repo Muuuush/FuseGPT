@@ -274,37 +274,19 @@ def fuse_importance_eval(
     eval_args, unchanged_head_idx = -1, outs_cache = []
     ):
     eval_batch_n = 4
-    if unchanged_head_idx == -1:
-        inps_run_f = copy.deepcopy(inps).to(device = 'cuda')
-    else:
-        inps_run_f = copy.deepcopy(outs_cache[unchanged_head_idx]).to(device = "cuda")
-    outs_cache_new = []
-
-    with torch.no_grad():
-        for i in range(unchanged_head_idx + 1, len(layers)):
-
-            outs_new = torch.zeros_like(inps).to(device = "cuda")
-            layer = layers[i]
-            for j in range(inps.shape[0]):
-                outs_new[j] = layer(inps_run_f[j], attention_mask=attention_mask, position_ids=position_ids)[0]
-
-            torch.cuda.empty_cache()
-
-            outs_cache_new.append(outs_new)
-            inps_run_f = outs_new
     
-    outs_cache_new = copy.deepcopy(outs_cache[0:unchanged_head_idx + 1]) + outs_cache_new
-    del outs_cache
-    outs_full = outs_new
-    del inps_run_f
+    importance_list, outs_cache_new = full_importance_eval(layers, inps[:eval_batch_n], attention_mask, position_ids, unchanged_head_idx, outs_cache)
+    outs_full = outs_cache_new[-1]
 
     inps_run = copy.deepcopy(inps).to(device = 'cuda')
     sim= []
     layers.cpu()
     fuse_step = eval_args.eval_group_size
-    for i in tqdm(range(len(layers)), desc = 'Importance Calculating...'):
+    try_list = importance_list[:4]
+    print(f"Try list: {try_list}")
+    for i in tqdm(range(len(try_list)), desc = 'Trying fuse'):
 
-        fuse_idx = i
+        fuse_idx = try_list[i]
         layer_max = len(layers)
         if fuse_idx == 0:
             tmp_group = list(range(0, fuse_step))
@@ -380,12 +362,12 @@ def fuse_importance_eval(
     del inps_run
     layers.cuda()
     
-    print(f"Similarity: {[float(i) for i in sim]}")
+    print(f"Similarity of try list: {[float(i) for i in sim]}")
     sim = torch.tensor(sim)
 
     out_idx = torch.argsort(sim, descending = True)
 
-    return out_idx, outs_cache_new
+    return [try_list[int(i)] for i in out_idx], outs_cache_new
 
 class Fuser():
     
