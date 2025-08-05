@@ -267,7 +267,112 @@ def full_importance_eval(
     out_idx = torch.argsort(sim, descending = True)
 
     return out_idx, outs_cache_new
+
+def fuse_importance_eval(
+    layers, inps_eval, attention_mask, position_ids,
+    eval_args, unchanged_head_idx = -1, outs_cache = []
+    ):
+    eval_batch_n = 4
+    if unchanged_head_idx == -1:
+        inps_run_f = copy.deepcopy(inps_eval).to(device = 'cuda')
+    else:
+        inps_run_f = copy.deepcopy(outs_cache[unchanged_head_idx]).to(device = "cuda")
+    outs_cache_new = []
+
+    with torch.no_grad():
+        for i in range(unchanged_head_idx + 1, len(layers)):
+
+            outs_new = torch.zeros((eval_batch_n, inps_run_f.shape[1], inps_run_f.shape[2], inps_run_f.shape[3]), dtype=inps_run_f.dtype, device='cuda')
+            layer = layers[i]
+            for j in range(eval_batch_n):
+                outs_new[j] = layer(inps_run_f[j], attention_mask=attention_mask, position_ids=position_ids)[0]
+
+            torch.cuda.empty_cache()
+
+            outs_cache_new.append(outs_new)
+            inps_run_f = outs_new
     
+    outs_cache_new = copy.deepcopy(outs_cache[0:unchanged_head_idx + 1]) + outs_cache_new
+    del outs_cache
+    outs_full = outs_new
+    del inps_run_f
+
+    inps_run = copy.deepcopy(inps_eval).to(device = 'cuda')
+    sim= []
+    layers.cpu()
+    for i in tqdm(range(len(layers)), desc = 'Importance Calculating...'):
+
+        tmp_group = []
+        if i > 0 and i < len(layers) - 1:
+            tmp_group = [range(i - 1, i + 2)]
+        elif i == 0 and i < len(layers) - 1:
+            tmp_group = [range(i, min(i + 3, len(layers)))]
+        elif i > 0 and i == len(layers) - 1:
+            tmp_group = [range(max(i - 2, 0), len(layers))]
+        else:
+            tmp_group = [i]
+        fuse_idx_t = i - tmp_group[0]
+        layers_2fuse = copy.deepcopy(nn.ModuleList(
+                [layers[layer_idx] for layer_idx in tmp_group]
+            )).cuda()
+
+        tmp_unchanged_head_idx = tmp_group[0] - 1
+        
+        if tmp_group[-1] < len(layers) - 1:
+            layers_unfuse_right = nn.ModuleList(
+                    [layers[layer_idx] for layer_idx in list(range(len(layers))) if layer_idx > tmp_group[-1]]
+                )
+        else:
+            layers_unfuse_right = nn.ModuleList([])
+        Fuse_manager = Fuser(layers_2fuse, inps_run, attention_mask, position_ids, fuse_idx_t, eval_args)
+
+        Fuse_manager.compute_full_states()
+
+        fused_layers = Fuse_manager.fuse_one_layer(layers_2fuse, eval_args)
+        fused_layers.cuda()
+        layers_unfuse_right.cuda()
+        fused_layers = Fuse_manager.update(layers_new, inps_run, inps_eval, eval_args)
+        layers_new = fused_layers + layers_unfuse_right
+        torch.cuda.empty_cache()
+
+
+        if tmp_unchanged_head_idx == 0:
+            inps_run_t = copy.deepcopy(inps_run).to(device = 'cuda')
+        else:
+            inps_run_t = copy.deepcopy(outs_cache_new[tmp_unchanged_head_idx - 1]).to(device = "cuda")
+        with torch.no_grad():
+
+            for k in range(0, len(layers_new)):
+                outs_new = torch.zeros((eval_batch_n, inps_run_t.shape[1], inps_run_t.shape[2], inps_run_t.shape[3]), dtype=inps_run_t.dtype, device='cuda')
+
+                layer = layers_new[k]
+                for j in range(eval_batch_n):
+                    outs_new[j] = layer(inps_run_t[j], attention_mask=attention_mask, position_ids=position_ids)[0]
+
+                torch.cuda.empty_cache()
+
+                inps_run_t = outs_new
+            
+            del inps_run_t
+
+            outs_part = outs_new
+            sim_i = F.cosine_similarity(outs_full, outs_part, dim = 3).mean()
+        sim.append(sim_i)
+
+        layers_unfuse_right.cpu()
+        del fused_layers
+        del outs_part, outs_new
+        torch.cuda.empty_cache()
+
+    del inps_run
+    layers.cuda()
+    
+    sim = torch.tensor(sim)
+
+    out_idx = torch.argsort(sim, descending = True)
+
+    return out_idx, outs_cache_new
+
 class Fuser():
     
     def __init__(self, layers_2fuse, inps, attention_mask, position_ids, fuse_idx, args):

@@ -84,11 +84,15 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
     inps_eval = torch.zeros(
         (eval_batch_n, inps.shape[1], inps.shape[2], inps.shape[3]), dtype=inps.dtype, device='cuda'
     )
+    eval_args = copy.deepcopy(args)
+    setattr(eval_args, "group_size", args.eval_group_size)
+    setattr(eval_args, "lora_rank", args.eval_lora_rank)
     inps_eval = copy.deepcopy(inps[:eval_batch_n]).to(device = 'cuda')
 
     if not args.iterative:
 
-        importance_list = full_importance_eval(layers, inps_eval, attention_mask, position_ids)
+        # importance_list = full_importance_eval(layers, inps_eval, attention_mask, position_ids)
+        importance_list = fuse_importance_eval(layers, inps_eval, attention_mask, position_ids, eval_args)
         removed_list = importance_list[:len(layers)//4]
         print(removed_list)
 
@@ -103,7 +107,8 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
         layer_max = len(layers)
         if args.iterative:
 
-            importance_list, outs_cache = full_importance_eval(layers, inps_eval, attention_mask, position_ids, unchanged_head_idx, outs_cache)
+            # importance_list, outs_cache = full_importance_eval(layers, inps_eval, attention_mask, position_ids, unchanged_head_idx, outs_cache)
+            importance_list, outs_cache = fuse_importance_eval(layers, inps_eval, attention_mask, position_ids, eval_args, unchanged_head_idx, outs_cache)
             fuse_idx = importance_list[0]
 
         else:
@@ -141,7 +146,7 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
             layers_unfuse_left = nn.ModuleList([])
         unchanged_head_idx = group[0] - 1
         
-        if group[-1] < layer_max-1:
+        if group[-1] < layer_max - 1:
             layers_unfuse_right = nn.ModuleList(
                     [layers[layer_idx] for layer_idx in list(range(layer_max)) if layer_idx > group[-1]]
                 )
@@ -407,8 +412,16 @@ if __name__ == '__main__':
         help='Rank of lora for matrix coef decomp.'
     )
     parser.add_argument(
+        '--eval-lora-rank', type=int, default=128,
+        help='Rank of lora for matrix coef decomp. (in importance evaluation)'
+    )
+    parser.add_argument(
         '--group-size', type=int, default=8,
         help='Size of group. In paper, the group size does not count the block to fuse, but in code we include it for convenience.'
+    )
+    parser.add_argument(
+        '--eval-group-size', type=int, default=3,
+        help='Size of group. In paper, the group size does not count the block to fuse, but in code we include it for convenience. (in importance evaluation)'
     )
 
     args = parser.parse_args()
