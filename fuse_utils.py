@@ -324,14 +324,20 @@ def fuse_importance_eval(
                 )
         else:
             layers_unfuse_right = nn.ModuleList([])
-        Fuse_manager = Fuser(layers_2fuse, inps_run, attention_mask, position_ids, fuse_idx_t, eval_args)
+
+
+        if tmp_unchanged_head_idx == -1:
+            inps_run_t = copy.deepcopy(inps_run).to(device = 'cuda')
+        else:
+            inps_run_t = copy.deepcopy(outs_cache_new[tmp_unchanged_head_idx - 1]).to(device = "cuda")
+        Fuse_manager = Fuser(layers_2fuse, inps_run_t, attention_mask, position_ids, fuse_idx_t, eval_args)
 
         Fuse_manager.compute_full_states()
 
         fused_layers = Fuse_manager.fuse_one_layer(layers_2fuse, eval_args)
         fused_layers.cuda()
         layers_unfuse_right.cuda()
-        fused_layers = Fuse_manager.update(fused_layers, inps_run, inps_eval, eval_args, True)
+        fused_layers = Fuse_manager.update(fused_layers, inps_run_t, inps_eval, eval_args, True)
         layers_new = fused_layers + layers_unfuse_right
         torch.cuda.empty_cache()
 
