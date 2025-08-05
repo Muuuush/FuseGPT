@@ -331,7 +331,7 @@ def fuse_importance_eval(
         fused_layers = Fuse_manager.fuse_one_layer(layers_2fuse, eval_args)
         fused_layers.cuda()
         layers_unfuse_right.cuda()
-        fused_layers = Fuse_manager.update(fused_layers, inps_run, inps_eval, eval_args, False)
+        fused_layers = Fuse_manager.update(fused_layers, inps_run, inps_eval, eval_args, True)
         layers_new = fused_layers + layers_unfuse_right
         torch.cuda.empty_cache()
 
@@ -457,7 +457,7 @@ class Fuser():
         return layers_out
 
 
-    def update(self, layers_new, inps_run, inps_eval, args, log = True):
+    def update(self, layers_new, inps_run, inps_eval, args, during_eval = False):
         inps_run_f = copy.deepcopy(inps_eval).to(device = 'cuda')
 
         criterion = nn.MSELoss()
@@ -477,7 +477,8 @@ class Fuser():
 
                 inps_run_f = outs_new
         
-            print("Error_pre:", criterion(outs_new.to(device='cuda'), self.outs_full.to(device='cuda')))
+            if not during_eval:
+                print("Error_pre:", criterion(outs_new.to(device='cuda'), self.outs_full.to(device='cuda')))
         
         inps_run_f = inps_run_f.cpu()
 
@@ -492,7 +493,7 @@ class Fuser():
         
         lr = 9.65e-6
         wd = 0 #1e-5
-        max_epochs = 20
+        max_epochs = 20 if not during_eval else 10
         betas = (0.9, 0.95)
         eps = 1e-8
 
@@ -517,7 +518,7 @@ class Fuser():
         layers_new.cuda()
         layers_new.train()
         
-        counter = tqdm(range(max_epochs), desc = 'Fused Layers Updating...') if log else range(max_epochs)
+        counter = tqdm(range(max_epochs), desc = 'Fused Layers Updating...') if not during_eval else range(max_epochs)
         for epoch in counter:
 
             total_loss = 0.0
@@ -564,7 +565,8 @@ class Fuser():
 
                 inps_run_f = outs_new
         
-            print("Error_after:", criterion(outs_new.to(device='cuda'), self.outs_full.to(device='cuda')))
+            if not during_eval:
+                print("Error_after:", criterion(outs_new.to(device='cuda'), self.outs_full.to(device='cuda')))
         
         inps_run_f = inps_run_f.cpu()
 
