@@ -262,6 +262,7 @@ def full_importance_eval(
         del outs_part, outs_new
     del inps_run
     
+    print(f"Similarity: {[float(i) for i in sim]}")
     sim = torch.tensor(sim)
 
     out_idx = torch.argsort(sim, descending = True)
@@ -379,6 +380,7 @@ def fuse_importance_eval(
     del inps_run
     layers.cuda()
     
+    print(f"Similarity: {[float(i) for i in sim]}")
     sim = torch.tensor(sim)
 
     out_idx = torch.argsort(sim, descending = True)
@@ -477,19 +479,19 @@ class Fuser():
         layers_new.cuda()
         layers_new.eval()
 
-        with torch.no_grad():
-            for i in range(len(layers_new)):
+        if not during_eval:
+            with torch.no_grad():
+                for i in range(len(layers_new)):
 
-                outs_new = torch.zeros((self.eval_batch_n, inps_run_f.shape[1], inps_run_f.shape[2], inps_run_f.shape[3]), dtype=inps_run_f.dtype, device='cuda')
-                layer = layers_new[i]
-                for j in range(self.eval_batch_n):
-                    outs_new[j] = layer(inps_run_f[j], attention_mask=self.attention_mask, position_ids=self.position_ids)[0]
+                    outs_new = torch.zeros((self.eval_batch_n, inps_run_f.shape[1], inps_run_f.shape[2], inps_run_f.shape[3]), dtype=inps_run_f.dtype, device='cuda')
+                    layer = layers_new[i]
+                    for j in range(self.eval_batch_n):
+                        outs_new[j] = layer(inps_run_f[j], attention_mask=self.attention_mask, position_ids=self.position_ids)[0]
 
-                torch.cuda.empty_cache()
+                    torch.cuda.empty_cache()
 
-                inps_run_f = outs_new
-        
-            if not during_eval:
+                    inps_run_f = outs_new
+            
                 print("Error_pre:", criterion(outs_new.to(device='cuda'), self.outs_full.to(device='cuda')))
         
         inps_run_f = inps_run_f.cpu()
@@ -565,19 +567,20 @@ class Fuser():
         layers_new.eval()
 
         inps_run_f = copy.deepcopy(inps_eval).to(device = 'cuda')
-        with torch.no_grad():
-            for i in range(len(layers_new)):
-
-                outs_new = torch.zeros((self.eval_batch_n, inps_run_f.shape[1], inps_run_f.shape[2], inps_run_f.shape[3]), dtype=inps_run_f.dtype, device='cuda')
-                layer = layers_new[i]
-                for j in range(self.eval_batch_n):
-                    outs_new[j] = layer(inps_run_f[j], attention_mask=self.attention_mask, position_ids=self.position_ids)[0]
-
-                torch.cuda.empty_cache()
-
-                inps_run_f = outs_new
         
-            if not during_eval:
+        if not during_eval:
+            with torch.no_grad():
+                for i in range(len(layers_new)):
+
+                    outs_new = torch.zeros((self.eval_batch_n, inps_run_f.shape[1], inps_run_f.shape[2], inps_run_f.shape[3]), dtype=inps_run_f.dtype, device='cuda')
+                    layer = layers_new[i]
+                    for j in range(self.eval_batch_n):
+                        outs_new[j] = layer(inps_run_f[j], attention_mask=self.attention_mask, position_ids=self.position_ids)[0]
+
+                    torch.cuda.empty_cache()
+
+                    inps_run_f = outs_new
+            
                 print("Error_after:", criterion(outs_new.to(device='cuda'), self.outs_full.to(device='cuda')))
         
         inps_run_f = inps_run_f.cpu()
