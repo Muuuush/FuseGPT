@@ -507,7 +507,7 @@ class Fuser():
         
         lr = 9.65e-6
         wd = 0 #1e-5
-        max_epochs = 20 if not during_eval else 10
+        max_epochs = 20 # if not during_eval else 10
         betas = (0.9, 0.95)
         eps = 1e-8
 
