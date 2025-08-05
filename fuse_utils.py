@@ -332,7 +332,9 @@ def fuse_importance_eval(
             inps_run_t = copy.deepcopy(outs_cache_new[tmp_unchanged_head_idx - 1]).to(device = "cuda")
         Fuse_manager = Fuser(layers_2fuse, inps_run_t, attention_mask, position_ids, fuse_idx_t, eval_args)
 
-        Fuse_manager.compute_full_states()
+        # Fuse_manager.compute_full_states()
+        Fuse_manager.outs_full = outs_cache_new[tmp_group[-1]][:Fuse_manager.n_batchs].to(device = "cuda")
+        Fuse_manager.outs_full_train = copy.deepcopy(outs_cache_new[tmp_group[-1]]).to(device = "cuda")
 
         fused_layers = Fuse_manager.fuse_one_layer(layers_2fuse, eval_args)
         fused_layers.cuda()
@@ -390,14 +392,14 @@ class Fuser():
         self.fuse_idx = fuse_idx
         self.eval_batch_n = 4
         self.args = args
-    
-    @torch.no_grad()
-    def compute_full_states(self):
         
         self.outs_full = torch.zeros((self.eval_batch_n, self.inps.shape[1], self.inps.shape[2], self.inps.shape[3]), dtype=self.inps.dtype, device='cpu')
         self.outs_full_train = torch.zeros_like(self.inps)
-
         self.n_batchs = self.inps.shape[0]
+    
+    @torch.no_grad()
+    def compute_full_states(self):
+
         for j in range(self.n_batchs):
             
             hidden_states = self.inps[j].to(device='cuda')
