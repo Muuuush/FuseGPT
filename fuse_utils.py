@@ -479,19 +479,19 @@ class Fuser():
         layers_new.cuda()
         layers_new.eval()
 
-        if not during_eval:
-            with torch.no_grad():
-                for i in range(len(layers_new)):
+        with torch.no_grad():
+            for i in range(len(layers_new)):
 
-                    outs_new = torch.zeros((self.eval_batch_n, inps_run_f.shape[1], inps_run_f.shape[2], inps_run_f.shape[3]), dtype=inps_run_f.dtype, device='cuda')
-                    layer = layers_new[i]
-                    for j in range(self.eval_batch_n):
-                        outs_new[j] = layer(inps_run_f[j], attention_mask=self.attention_mask, position_ids=self.position_ids)[0]
+                outs_new = torch.zeros((self.eval_batch_n, inps_run_f.shape[1], inps_run_f.shape[2], inps_run_f.shape[3]), dtype=inps_run_f.dtype, device='cuda')
+                layer = layers_new[i]
+                for j in range(self.eval_batch_n):
+                    outs_new[j] = layer(inps_run_f[j], attention_mask=self.attention_mask, position_ids=self.position_ids)[0]
 
-                    torch.cuda.empty_cache()
+                torch.cuda.empty_cache()
 
-                    inps_run_f = outs_new
+                inps_run_f = outs_new
             
+            if not during_eval:
                 print("Error_pre:", criterion(outs_new.to(device='cuda'), self.outs_full.to(device='cuda')))
         
         inps_run_f = inps_run_f.cpu()
@@ -568,19 +568,19 @@ class Fuser():
 
         inps_run_f = copy.deepcopy(inps_eval).to(device = 'cuda')
         
-        if not during_eval:
-            with torch.no_grad():
-                for i in range(len(layers_new)):
+        with torch.no_grad():
+            for i in range(len(layers_new)):
 
-                    outs_new = torch.zeros((self.eval_batch_n, inps_run_f.shape[1], inps_run_f.shape[2], inps_run_f.shape[3]), dtype=inps_run_f.dtype, device='cuda')
-                    layer = layers_new[i]
-                    for j in range(self.eval_batch_n):
-                        outs_new[j] = layer(inps_run_f[j], attention_mask=self.attention_mask, position_ids=self.position_ids)[0]
+                outs_new = torch.zeros((self.eval_batch_n, inps_run_f.shape[1], inps_run_f.shape[2], inps_run_f.shape[3]), dtype=inps_run_f.dtype, device='cuda')
+                layer = layers_new[i]
+                for j in range(self.eval_batch_n):
+                    outs_new[j] = layer(inps_run_f[j], attention_mask=self.attention_mask, position_ids=self.position_ids)[0]
 
-                    torch.cuda.empty_cache()
+                torch.cuda.empty_cache()
 
-                    inps_run_f = outs_new
+                inps_run_f = outs_new
             
+            if not during_eval:
                 print("Error_after:", criterion(outs_new.to(device='cuda'), self.outs_full.to(device='cuda')))
         
         inps_run_f = inps_run_f.cpu()
