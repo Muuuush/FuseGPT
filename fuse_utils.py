@@ -283,7 +283,7 @@ def fuse_importance_eval(
     layers.cpu()
     fuse_step = eval_args.eval_group_size
     try_list = list(importance_list[:4])
-    print(f"Try list: {try_list}")
+    print(f"Try list: {[layers[i].self_attn.layer_idx for i in try_list]}")
     for i in tqdm(range(len(try_list)), desc = 'Trying fuse'):
 
         fuse_idx = try_list[i]
