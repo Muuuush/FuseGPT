@@ -300,17 +300,21 @@ def fuse_importance_eval(
     inps_run = copy.deepcopy(inps_eval).to(device = 'cuda')
     sim= []
     layers.cpu()
+    fuse_step = eval_args.eval_group_size
     for i in tqdm(range(len(layers)), desc = 'Importance Calculating...'):
 
-        tmp_group = []
-        if i > 0 and i < len(layers) - 1:
-            tmp_group = list(range(i - 1, i + 2))
-        elif i == 0 and i < len(layers) - 1:
-            tmp_group = list(range(i, min(i + 3, len(layers))))
-        elif i > 0 and i == len(layers) - 1:
-            tmp_group = list(range(max(i - 2, 0), len(layers)))
+        fuse_idx = i
+        layer_max = len(layers)
+        if fuse_idx == 0:
+            tmp_group = list(range(0, fuse_step))
         else:
-            tmp_group = [i]
+            if fuse_idx - 1 - (fuse_step / 2 - 1) < 0:
+                tmp_group = list(range(0, fuse_step))
+            elif fuse_idx + (fuse_step / 2 - 1) > len(layers) - 1:
+                tmp_group = list(range(layer_max - fuse_step, layer_max))
+            else:
+                tmp_group = list(range(fuse_idx - 1 - (int(fuse_step / 2) - 1), fuse_idx + (int(fuse_step / 2) - 1) + 1))
+
         fuse_idx_t = i - tmp_group[0]
         layers_2fuse = copy.deepcopy(nn.ModuleList(
                 [layers[layer_idx] for layer_idx in tmp_group]
