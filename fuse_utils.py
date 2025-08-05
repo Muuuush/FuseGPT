@@ -283,7 +283,7 @@ def fuse_importance_eval(
     with torch.no_grad():
         for i in range(unchanged_head_idx + 1, len(layers)):
 
-            outs_new = torch.zeros_like(inps)
+            outs_new = torch.zeros_like(inps).to(device = "cuda")
             layer = layers[i]
             for j in range(inps.shape[0]):
                 outs_new[j] = layer(inps_run_f[j], attention_mask=attention_mask, position_ids=position_ids)[0]
@@ -356,7 +356,7 @@ def fuse_importance_eval(
         with torch.no_grad():
 
             for k in range(0, len(layers_new)):
-                outs_new = torch.zeros_like(inps)
+                outs_new = torch.zeros_like(inps).to(device = "cuda")
 
                 layer = layers_new[k]
                 for j in range(inps.shape[0]):
