@@ -282,7 +282,7 @@ def fuse_importance_eval(
     sim= []
     layers.cpu()
     fuse_step = eval_args.eval_group_size
-    try_list = importance_list[:4]
+    try_list = list(importance_list[:4])
     print(f"Try list: {try_list}")
     for i in tqdm(range(len(try_list)), desc = 'Trying fuse'):
 
@@ -474,7 +474,7 @@ class Fuser():
                 inps_run_f = outs_new
             
             if not during_eval:
-                print("Error_pre:", criterion(outs_new.to(device='cuda'), self.outs_full.to(device='cuda')))
+                print("Error_pre:", float(criterion(outs_new.to(device='cuda'), self.outs_full.to(device='cuda'))))
         
         inps_run_f = inps_run_f.cpu()
 
@@ -563,7 +563,7 @@ class Fuser():
                 inps_run_f = outs_new
             
             if not during_eval:
-                print("Error_after:", criterion(outs_new.to(device='cuda'), self.outs_full.to(device='cuda')))
+                print("Error_after:", float(criterion(outs_new.to(device='cuda'), self.outs_full.to(device='cuda'))))
         
         inps_run_f = inps_run_f.cpu()
 
