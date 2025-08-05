@@ -346,6 +346,9 @@ def fusion_eval(model, testenc, dev, eval_set, args):
         results = results + ";coef-lora " + str(args.coef_lora)
     results = results + ";group_size: " + str(args.group_size)
     results = results + ";lora_rank: " + str(args.lora_rank)
+    results = results + ";fuse_eval: " + str(args.fuse_eval)
+    results = results + ";eval_group_size: " + str(args.eval_group_size)
+    results = results + ";eval_lora_rank: " + str(args.eval_lora_rank)
     results = results + ";prune_rate: " + str(args.prune_rate)
     results = results + '\n'
     if not os.path.exists(file_name):
