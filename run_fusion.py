@@ -157,7 +157,7 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
         inps_run = compute_inps_run(layers, inps, attention_mask, position_ids, layer_start_idx = group[0], args = args)
 
         group_importance = [i for i in importance_list if i in group]
-        importance_rank = [group_importance.index(i) / (len(group_importance) - 1) for i in group]
+        importance_rank = [group_importance.index(i) - 1 / (len(group_importance) - 2) for i in group]
         Fuse_manager = Fuser(layers_2fuse, inps_run, attention_mask, position_ids, fuse_idx_t, importance_rank, args)
 
         Fuse_manager.compute_full_states()
