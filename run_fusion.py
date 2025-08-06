@@ -108,8 +108,8 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
         if args.iterative:
 
             importance_list, outs_cache = full_importance_eval(layers, inps_eval, attention_mask, position_ids, unchanged_head_idx, outs_cache, original_outs)
-            dangerous_list = importance_list[1 : fuse_times - idx]
-            print(f"Dangerous list: {dangerous_list}")
+            # dangerous_list = importance_list[1 : fuse_times - idx]
+            # print(f"Dangerous list: {dangerous_list}")
             fuse_idx = importance_list[0]
 
         else:
@@ -133,7 +133,7 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
             else:
                 group = list(range(fuse_idx - 1 - (int(fuse_step/2)-1), fuse_idx + (int(fuse_step/2)-1)+1))
 
-        fuse_idx_t = [i for i in group if i not in dangerous_list].index(fuse_idx)
+        fuse_idx_t = group.index(fuse_idx)
         layers_2fuse = nn.ModuleList(
                 [layers[layer_idx] for layer_idx in group if layer_idx not in dangerous_list]
             )
