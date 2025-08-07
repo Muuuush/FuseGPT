@@ -155,7 +155,7 @@ def run_macro_fusion(args, layers, inps, attention_mask, position_ids, dev):
         inps_run = compute_inps_run(layers, inps, attention_mask, position_ids, layer_start_idx = group[0], args = args)
 
         group_importance = [i for i in importance_list if i in group]
-        if fuse_times - idx > 4:
+        if fuse_times - idx > 2:
             lora_coef_list = [(group_importance.index(i) - 1) / (len(group_importance) - 2) for i in group]
         else:
             lora_coef_list = [0.5 for i in range(len(group))]
