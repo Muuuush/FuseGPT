@@ -1,6 +1,6 @@
 # FuseGPT
 
-This repository is the implementation for the paper [FuseGPT: Learnable Layers Fusion of Generative Pre-trained Transformers](https://arxiv.org/abs/2411.14507). 
+This repository is the improved implementation for the paper [FuseGPT: Learnable Layers Fusion of Generative Pre-trained Transformers](https://arxiv.org/abs/2411.14507). 
 
 ## Dependencies
 
